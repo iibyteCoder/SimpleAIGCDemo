@@ -38,8 +38,12 @@ class Img2ImgRequestItem(RequestItem):
 
 
 class ResponseItem(BaseModel):
-    task_index: str = Field(default=time.time().__str__().replace(',', ''),
+    task_index: str = Field(default=time.time().__str__().replace('.', ''),
                             title='任务编号', description='用于返回本次请求生成的任务编号')
-    images: List[str] = Field(default=None, title='图片（base64格式）', description='生成的图片，以base64编码')
+    images: List[bytes] = Field(default=None, title='图片（base64格式）', description='生成的图片，以base64编码')
     parameters: dict = Field(default=None, title='参数')
     info: Dict = Field(default=None, title='其他信息', description='其他信息')
+
+
+if __name__ == '__main__':
+    print(time.time().__str__().replace('.', ''))

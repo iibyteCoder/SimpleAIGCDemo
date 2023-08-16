@@ -24,6 +24,8 @@ router = APIRouter(
 @router.post("/txt2img", tags=['文生图'], description='文生图', response_model=ResponseItem)
 # @logger
 def txt2img(request_item: Txt2ImgRequestItem):
+    task_index = ''
+    b64images = ''
     log.info(request_item)
     width = request_item.width
     height = request_item.height
@@ -32,18 +34,22 @@ def txt2img(request_item: Txt2ImgRequestItem):
     steps = request_item.steps
     scale = request_item.scale
     size = request_item.size
-    task_index = request_item.task_index
-    nprompt = get_setting_field('diffusers.negative_prompt')
-    tracker = TaskTrack(task_index=task_index, total_steps=steps)
-    process = TextToImageProcessor(prompt=prompt, negative_prompt=negative_prompt or nprompt, width=width,
-                                   height=height, steps=steps, scale=scale, size=size, tracker=tracker)
-
-    future = process.submit_task()
-    result = future.result()
-    images_list = result.images
-    b64images = list(map(encode_pil_to_base64, images_list))
-    log.info(b64images)
-    return ResponseItem(images=b64images, )
+    try:
+        task_index = request_item.task_index
+        nprompt = get_setting_field('diffusers.negative_prompt')
+        tracker = TaskTrack(task_index=task_index, total_steps=steps)
+        process = TextToImageProcessor(prompt=prompt, negative_prompt=negative_prompt or nprompt, width=width,
+                                       height=height, steps=steps, scale=scale, size=size, tracker=tracker)
+        future = process.submit_task()
+        result = future.result()
+        images_list = result.images
+        b64images = list(map(encode_pil_to_base64, images_list))
+    except InterruptedError as i:
+        log.info(f'任务中断，任务编号：{task_index}')
+    except Exception as e:
+        log.error(f'发生错误：{e}')
+    # log.info(b64images)
+    return ResponseItem(images=b64images, task_index=task_index)
 
 
 @router.post("/img2img", tags=['图生图'], description='图生图', response_model=ResponseItem)
@@ -59,7 +65,7 @@ def interrupt(index: str = Query(...)):
     response = ResponseItem(task_index=index)
     if tracker:
         try:
-            tracker.task.cancel()
+            tracker.interrupted = True
         except Exception as e:
             log.error(f'打断发生错误，task_index：{tracker.task_index}', e)
     response.info = {"success": True}
@@ -72,7 +78,7 @@ def progress(index: str = Query(...)):
     response = ResponseItem(task_index=index)
     if tracker:
         response.info = {"success": True, "total_steps": tracker.total_steps, "current_step": tracker.current_step}
-        response.images = tracker.images
+        response.images = list(map(encode_pil_to_base64, tracker.images))
         return response
     response.info = {"message": "任务尚未开始"}
     return response

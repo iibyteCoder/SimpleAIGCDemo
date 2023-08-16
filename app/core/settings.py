@@ -14,12 +14,17 @@ app_dir = os.path.dirname(os.path.dirname(__file__))
 config_file_path = os.path.join(app_dir, 'config.toml')
 root_dir = os.path.dirname(app_dir)
 model_path = os.path.join(root_dir, 'models')
-
+files_path = os.path.join(root_dir, 'files')
 # 配置文件
 config = toml.load(config_file_path)
 
 
 def get_setting_field(field_name: str):
+    """
+    根据配置文件config.toml键（ex：app.thread）获取对应值
+    :param field_name: 配置文件中的键，如app.thread
+    :return: 对应的值
+    """
     str_list = field_name.split('.')
     layer = config
     for field in str_list:

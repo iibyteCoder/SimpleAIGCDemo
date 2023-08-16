@@ -4,7 +4,7 @@
 # @Author  : zhangyb
 # @File    : text_to_image.py
 # @Software: PyCharm
-from concurrent.futures import ThreadPoolExecutor, Future
+from concurrent.futures import Future, ThreadPoolExecutor
 
 import torch
 from loguru import logger as log
@@ -52,10 +52,13 @@ class TextToImageProcessor:
                 output_type="pil",
                 callback=self.tracker.image_callback
             )
+        except InterruptedError as i:
+            log.info(i)
+            raise InterruptedError(*i.args)
         except Exception as e:
             log.error(e)
         finally:
-            log.info(f'------- 放回队列中：{pipeline}：{id(pipeline)} --------')
+            log.info(f'------- 放回队列中：{pipeline.__class__}：{id(pipeline)} --------')
             self.pipeline_container.put(pipeline=pipeline)
 
     # def process(self, prompt, width, height):
@@ -114,5 +117,14 @@ if __name__ == '__main__':
     # res2 = executor.submit(a2.process, prompt="polar bear", width=128, height=128)
     # res2.result()
     # log.info(f'res2:{res2}')
-    a3 = TextToImageProcessor(prompt='puppy', negative_prompt='nsfw', width=64, height=64, scale=0.7, steps=10)
-    task = a3.submit_task()
+
+    from pathos.pp import ParallelPool
+
+    tracker = TaskTrack(task_index='666', total_steps=10)
+    a3 = TextToImageProcessor(prompt='puppy', negative_prompt='nsfw', width=64, height=64, scale=0.7, steps=10,
+                              tracker=tracker)
+    # task = a3.submit_task()
+    pool = ParallelPool(nodes=1)
+    # pool = ProcessingPool(nodes=1)
+    result = pool.map(a3.text_to_image, ('',))
+    # print(result)

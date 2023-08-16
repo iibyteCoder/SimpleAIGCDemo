@@ -59,22 +59,22 @@ def timer(func):
 
     def wrapper(*args, **kwargs):
         t1 = time.time()
-        log.info(f'{func.__name__:>20} | start >>>')
+        log.info(f'{func.__name__:>20} | START >>>')
         res = func(*args, **kwargs)
-        log.info(f'{func.__name__:>20} | end <<< | 耗时：{time.time() - t1:.3}s')
+        log.info(f'{func.__name__:>20} | END <<< | 耗时：{time.time() - t1:.9}s')
         return res
 
     return wrapper
 
 
-def logger(func):
+def param_log(func):
     """
     打印参数
     """
 
     def wrapper(*args, **kwargs):
         t1 = time.time()
-        log.info(f'>>> {func.__name__} | {locals()} >>>')
+        log.info(f'>>> {func.__name__:>20} | 参数 | {locals()} >>>')
         res = func(*args, **kwargs)
         return res
 
