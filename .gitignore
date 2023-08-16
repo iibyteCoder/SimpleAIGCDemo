@@ -1,0 +1,6 @@
+/models/
+/venv
+/.idea
+.vscode
+*.png
+*.jpg
